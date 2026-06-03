@@ -1,14 +1,14 @@
+from google import genai
 import tweepy
-import google.generativeai as genai
 import schedule
 import time
 import os
 
-# Configuration
-genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-model = genai.GenerativeModel("gemini-1.5-flash-002")
+# Configuration Gemini
+client_gemini = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
 
-client = tweepy.Client(
+# Configuration X/Twitter
+client_x = tweepy.Client(
     consumer_key=os.environ.get("X_API_KEY"),
     consumer_secret=os.environ.get("X_API_SECRET"),
     access_token=os.environ.get("X_ACCESS_TOKEN"),
@@ -33,25 +33,24 @@ Exemples de style :
 
 🔥 Totti a joué 25 saisons en Serie A. Aucun joueur moderne ne dépasse 15. Le football a changé. #SerieA"""
 
-    reponse = model.generate_content(prompt)
+    reponse = client_gemini.models.generate_content(
+        model="gemini-2.0-flash-lite",
+        contents=prompt
+    )
     tweet = reponse.text.strip()
-    
-    # S'assurer que le tweet fait moins de 280 caractères
+
     if len(tweet) > 280:
         tweet = tweet[:277] + "..."
-    
+
     try:
-        client.create_tweet(text=tweet)
+        client_x.create_tweet(text=tweet)
         print(f"Tweet posté : {tweet}")
     except Exception as e:
-        print(f"Erreur : {e}")
+        print(f"Erreur X : {e}")
 
-# Poster chaque jour à 9h00
 schedule.every().day.at("09:00").do(generer_tweet)
 
 print("Agent EnzoFootballLiga démarré ✅")
-
-# Poster un premier tweet immédiatement au démarrage
 generer_tweet()
 
 while True:
